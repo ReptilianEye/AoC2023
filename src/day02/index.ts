@@ -1,5 +1,4 @@
 import run from "aocrunner"
-import { link } from "fs"
 
 const parseInput = (rawInput: string) => {
   const gameSplit = rawInput.split("\n").map((line) => line.trim().split(":"))
@@ -13,7 +12,6 @@ const parseInput = (rawInput: string) => {
             <Drawn>{
               count: parseInt(roundSplitted[0]),
               color: roundSplitted[1],
-              // }
             },
         ),
     ),
