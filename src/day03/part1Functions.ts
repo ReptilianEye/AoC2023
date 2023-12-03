@@ -1,5 +1,7 @@
-const isSymbol = (char: string) => char !== "." && !char.match(/[0-9]/)
-const checkSides = (
+import { charPosition, getDirectionsCoordinates } from "./functions.js"
+
+export const isSymbol = (char: string) => char !== "." && !char.match(/[0-9]/)
+export const checkSides = (
   rowNumber: number,
   columnNumber: number,
   directions: number[][],
@@ -10,7 +12,7 @@ const checkSides = (
     return isSymbol(map[newX][newY])
   })
 
-const checkIfSymbolNbour = (
+export const checkIfHasSymbolNbour = (
   rowNumber: number,
   startIndex: number,
   numberLength: number,
@@ -48,4 +50,3 @@ const checkIfSymbolNbour = (
       )
     })
 }
-export default part1 = (map) => {}
