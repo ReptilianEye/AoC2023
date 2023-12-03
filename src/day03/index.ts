@@ -32,10 +32,9 @@ const getDirectionsCoordinates = (direction: charPosition): number[][] => {
       return [
         ...getDirectionsCoordinates(charPosition.LEFT),
         ...getDirectionsCoordinates(charPosition.RIGHT),
-      ]
+      ].slice(2) //remove one base
   }
 }
-
 const isSymbol = (char: string) => char !== "." && !char.match(/[0-9]/)
 const checkSides = (
   rowNumber: number,
@@ -110,9 +109,86 @@ const part1 = (rawInput: string) => {
 }
 
 const part2 = (rawInput: string) => {
-  const input = parseInput(rawInput)
+  const starsKey = (i: number, j: number) => `${i},${j}`
+  const map = parseInput(rawInput)
+  const stars: { [pos: string]: string[] } = {}
+  map.forEach((line, row) => {
+    ;[...line].forEach((char, column) => {
+      if (char === "*") stars[starsKey(row, column)] = []
+    })
+  })
+  const checkSidesAndAppend = (
+    rowNumber: number,
+    columnNumber: number,
+    directions: number[][],
+    numberStr: string,
+  ) =>
+    directions.forEach((dir) => {
+      let [newX, newY] = [rowNumber + dir[0], columnNumber + dir[1]]
+      if (map[newX][newY] === "*") stars[starsKey(newX, newY)].push(numberStr)
+    })
 
-  return
+  const appendNearStars = (
+    rowNumber: number,
+    startIndex: number,
+    numberStr: string,
+  ) => {
+    const endIndex = startIndex + numberStr.length - 1
+    if (startIndex == endIndex) {
+      checkSidesAndAppend(
+        rowNumber,
+        startIndex,
+        getDirectionsCoordinates(charPosition.SOLO),
+        numberStr,
+      )
+    } else {
+      Array(numberStr.length)
+        .fill(0)
+        .map((_, i) => i + startIndex)
+        .forEach((column) => {
+          var direction
+          switch (column) {
+            case startIndex:
+              direction = charPosition.LEFT
+              break
+            case endIndex:
+              direction = charPosition.RIGHT
+              break
+            default:
+              direction = charPosition.MIDDLE
+              break
+          }
+          checkSidesAndAppend(
+            rowNumber,
+            column,
+            getDirectionsCoordinates(direction),
+            numberStr,
+          )
+        })
+    }
+  }
+  map.forEach((line, row) => {
+    let matches = [...line.matchAll(/[0-9]+/g)]
+    matches.forEach((match) => {
+      let [foundNumber, index] = [match[0], match.index]
+      if (index == null) {
+        console.log("err")
+        return
+      }
+      appendNearStars(row, index, foundNumber)
+    })
+  })
+  return Object.keys(stars).reduce(
+    (acc, currentStar) =>
+      stars[currentStar].length == 2
+        ? acc +
+          stars[currentStar].reduce(
+            (prev, currentNumber) => prev * parseInt(currentNumber),
+            1,
+          )
+        : acc,
+    0,
+  )
 }
 
 run({
@@ -136,10 +212,19 @@ run({
   },
   part2: {
     tests: [
-      // {
-      //   input: ``,
-      //   expected: "",
-      // },
+      {
+        input: `467..114..
+                ...*......
+                ..35..633.
+                ......#...
+                617*......
+                .....+.58.
+                ..592.....
+                ......755.
+                ...$.*....
+                .664.598..`,
+        expected: 467835,
+      },
     ],
     solution: part2,
   },
