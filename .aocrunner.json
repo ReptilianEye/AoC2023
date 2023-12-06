@@ -5,16 +5,16 @@
   "days": [
     {
       "part1": {
-        "solved": false,
+        "solved": true,
         "result": "54634",
         "attempts": [],
-        "time": 0.6102
+        "time": 0.5631
       },
       "part2": {
-        "solved": false,
+        "solved": true,
         "result": "53855",
         "attempts": [],
-        "time": 2.941
+        "time": 3.0389
       }
     },
     {
@@ -88,13 +88,13 @@
         "solved": true,
         "result": "771628",
         "attempts": [],
-        "time": 0.0713
+        "time": 0.1128
       },
       "part2": {
         "solved": true,
         "result": "27363861",
         "attempts": [],
-        "time": 26.2493
+        "time": 28.0166
       }
     },
     {
