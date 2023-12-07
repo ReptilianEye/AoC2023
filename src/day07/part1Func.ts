@@ -1,13 +1,4 @@
-import { Combinations, compareHandsOwn } from "./func.js"
-
-export interface Card {
-  symbol: string
-  strength: number
-}
-export interface Hand {
-  cards: Card[]
-  bid: number
-}
+import { Combinations, Hand, compareHandsOwn } from "./func.js"
 
 export const CardsStrengths: { [symbol: string]: number } = {
   2: 2,
@@ -32,7 +23,7 @@ export const getCompination = (symbols: string[]) => {
 
   const counts: { [sym: string]: number } = {}
   for (let sym of distincts) {
-    counts[sym] = symbols.filter((val) => val == sym).length
+    counts[sym] = symbols.filter((val) => val === sym).length
   }
   const countsNumbers = Object.values(counts)
 

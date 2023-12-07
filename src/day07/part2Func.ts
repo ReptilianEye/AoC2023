@@ -47,13 +47,6 @@ const getCompinationValue = (symbols: string[]) => {
     if (distincts.size === 1) return Combinations.fiveOfAKind
     if (distincts.size === 2) return Combinations.fourOfAKind
   }
-  // const counts: { [sym: string]: number } = {}
-
-  // for (let sym of distincts) {
-  //   counts[sym] = symbols.filter((val) => val == sym).length
-  // }
-  // const countsNumbers = Object.values(counts)
-
   if (jokers === 2) {
     if (distincts.size === 1) return Combinations.fiveOfAKind
     if (distincts.size === 2) return Combinations.fourOfAKind

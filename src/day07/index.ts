@@ -1,6 +1,7 @@
 import run from "aocrunner"
-import { Card, CardsStrengths, Hand, compareHands1 } from "./part1Func.js"
+import { CardsStrengths, compareHands1 } from "./part1Func.js"
 import { compareHands2 } from "./part2Func.js"
+import { Card, Hand } from "./func.js"
 
 const parseHand = (rawHand: string) =>
   rawHand.split("").map(
