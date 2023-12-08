@@ -6,7 +6,7 @@ interface Graph {
 const parseInput = (rawInput: string) => {
   const [instructions, _, ...map] = rawInput.split("\n")
   const Graph = map
-    .map((line) => line.match(/[A-Z|1-9]{3}/g))
+    .map((line) => line.match(/[A-Z|1-9]{3}/g) as [string, string, string])
     .reduce(
       (G, [source, left, right]) =>
         <Graph>{
