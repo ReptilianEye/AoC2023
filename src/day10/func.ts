@@ -45,3 +45,40 @@ export const makeArray = (n: number, m: number, val: any) => {
   }
   return arr
 }
+
+export const displayMap = (map: string[][], ignore = false) => {
+  var disp
+  if (ignore) {
+    disp = map.map((line, i) =>
+      line.map((val, j) => (isBarrier(map, [i, j]) ? "B" : val)).join(),
+    )
+  } else {
+    disp = map.map((line) => {
+      var newL = ""
+      line.forEach((val) => {
+        newL = newL + ", " + (val.length == 1 ? val + " " : val)
+      })
+      return newL
+    })
+  }
+  console.log(disp)
+}
+export const moves = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+]
+export const validPos = (map: any[][], pos: number[]) => {
+  const n = map.length
+  const m = map[0].length
+  if (pos[0] < 0 || pos[0] >= n) return false
+  if (pos[1] < 0 || pos[1] >= m) return false
+  return true
+}
+export const isBarrier = (map: string[][], pos: number[]) =>
+  validPos(map, pos) && !isNaN(parseInt(val(map, pos)))
+export const isValBarrier = (x: string) => !isNaN(parseInt(x))
+export const val = (map: any[][], pos: number[]) => map[pos[0]][pos[1]]
+export const setVal = (map: any[][], pos: number[], x: any) =>
+  (map[pos[0]][pos[1]] = x)

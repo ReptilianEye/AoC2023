@@ -1,5 +1,15 @@
 import run from "aocrunner"
-import { connections, makeArray } from "./func.js"
+import {
+  connections,
+  displayMap,
+  isBarrier,
+  isValBarrier,
+  makeArray,
+  moves,
+  setVal,
+  val,
+  validPos,
+} from "./func.js"
 const getPos = (input: any[][], x: any) => {
   var SPos = [0, 0]
   input.some((line, i) =>
@@ -26,24 +36,20 @@ const move = (start: number[], moveCoord: number[]) => [
   start[0] + moveCoord[0],
   start[1] + moveCoord[1],
 ]
-const val = (map: any[][], pos: number[]) => map[pos[0]][pos[1]]
-const setVal = (map: any[][], pos: number[], x: any) =>
-  (map[pos[0]][pos[1]] = x)
-const isBarrier = (map: string[][], pos: number[]) =>
-  !isNaN(parseInt(val(map, pos)))
+const substract = (a: number[], b: number[]) => [a[0] - b[0], a[1] - b[1]]
+
 const areConnected = (map: string[][], pos1: number[], pos2: number[]) => {
   if (
     Object.values(keys).includes(val(map, pos1)) ||
     Object.values(keys).includes(val(map, pos2))
   )
     return false
-  const diff = (a: number[], b: number[]) => [a[0] - b[0], a[1] - b[1]]
   return (
     getConnections(map, pos1).some(
-      (mv) => mv.toString() === diff(pos2, pos1).toString(),
+      (mv) => mv.toString() === substract(pos2, pos1).toString(),
     ) &&
     getConnections(map, pos2).some(
-      (mv) => mv.toString() === diff(pos1, pos2).toString(),
+      (mv) => mv.toString() === substract(pos1, pos2).toString(),
     )
   )
 }
@@ -89,7 +95,8 @@ const part1 = (rawInput: string) => {
   return max(BFS(input, SPos))
 }
 const BFS2 = (map: string[][], s: number[]) => {
-  var Q: { v: number[]; prev: string }[] = [{ v: s, prev: "0" }]
+  const start = "10"
+  var Q: { v: number[]; prev: string }[] = [{ v: s, prev: start }]
   while (Q.length > 0) {
     const next = Q.shift()
     if (next === undefined) throw Error("empty queue")
@@ -103,7 +110,7 @@ const BFS2 = (map: string[][], s: number[]) => {
     }
     setVal(map, v, dir)
   }
-  setVal(map, s, 0)
+  setVal(map, s, start)
 }
 const BFS2Old = (map: string[][], s: number[]) => {
   const starting = connections[val(map, s) as string]
@@ -132,22 +139,10 @@ const addGuard = (map: string[][]) => {
   withGuards.push(Array(m).fill("O"))
   return withGuards
 }
-const validPos = (map: any[][], pos: number[]) => {
-  const n = map.length
-  const m = map[0].length
-  if (pos[0] < 0 || pos[0] >= n) return false
-  if (pos[1] < 0 || pos[1] >= m) return false
-  return true
-}
 
 const fillBad = (map: string[][], s: number[], filler = "O") => {
   const getNbours = (map: string[][], pos: number[]) => {
-    return [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-    ]
+    return moves
       .map((mv) => {
         const u = move(pos, mv)
         if (!validPos(map, u)) return []
@@ -167,116 +162,117 @@ const fillBad = (map: string[][], s: number[], filler = "O") => {
     }
   }
 }
-const fillGood = (map: string[][], s: number[], filler = "G") => {
+const connectedByPipe = (map: string[][], pos1: number[], pos2: number[]) => {
+  // console.log(
+  //   "dla ",
+  //   pos1,
+  //   pos2,
+  //   Math.abs(parseInt(val(map, pos1)) - parseInt(val(map, pos2))),
+  // )
+  return Math.abs(parseInt(val(map, pos1)) - parseInt(val(map, pos2))) == 1
+}
+const opposite = (pos: number[]) => {
+  return [-pos[0], -pos[1]].map((val) => (val == 0 ? 0 : val))
+}
+const fillBadIn = (
+  map: string[][],
+  s: number[],
+  badFiller: string,
+  filler = "G",
+) => {
+  const visited: string[] = []
+  const gavePass: { [key: string]: number[] } = {}
   const getNbours = (map: string[][], pos: number[]) => {
-    return [
-      [-1, 0],
-      [1, 0],
-      [0, -1],
-      [0, 1],
-    ]
-      .map((mv) => {
+    const movesBarrier: number[][] = []
+    if (isBarrier(map, pos)) {
+      const pass = gavePass[pos.toString()]
+      // console.log("pass", pass, opposite(pass))
+      moves.forEach((mv) => {
         const u = move(pos, mv)
-        if (!validPos(map, u)) return []
-        if (val(map, u) === filler) return []
-        if (isBarrier(map, u)) return []
-        return u
+        if (
+          mv.toString() !== opposite(pass).toString() &&
+          validPos(map, u) &&
+          val(map, u) === "."
+        )
+          movesBarrier.push(u)
       })
-      .filter((x) => x.length > 0)
+    }
+    return [
+      ...movesBarrier,
+      ...moves
+        .map((mv) => {
+          const u = move(pos, mv)
+          if (!validPos(map, u)) return []
+          if (val(map, u) === filler) return []
+          if (val(map, u) === badFiller) return []
+
+          if (isBarrier(map, u)) {
+            if (isBarrier(map, pos)) {
+              if (!connectedByPipe(map, pos, u)) {
+                return []
+              }
+              gavePass[u.toString()] = move(gavePass[pos.toString()], mv)
+              return u
+            }
+            var nbours = []
+            if (mv[0] != 0) {
+              nbours = [move(u, [0, 1]), move(u, [0, -1])]
+            } else {
+              nbours = [move(u, [1, 0]), move(u, [-1, 0])]
+            }
+            if (pos.toString() === "7,5") console.log("nbours", nbours)
+            var pass = null
+            if (
+              nbours.some((nb) => {
+                if (
+                  validPos(map, nb) &&
+                  (val(map, nb) === "." || isBarrier(map, nb)) &&
+                  !connectedByPipe(map, u, nb)
+                ) {
+                  pass = substract(nb, u)
+                  return true
+                }
+                return false
+              })
+            ) {
+              if (pass) gavePass[u.toString()] = pass
+              return u
+            } else return []
+          }
+          if (!connectedByPipe(map, u, pos)) return []
+
+          if (pos.toString() === "7,5") console.log("rest", u)
+          return u
+        })
+        .filter((x) => x.length > 0)
+        .filter((mv) => !visited.includes(mv.toString())),
+    ]
+    // .map((mv) => (typeof mv[0] === "number" ? [...mv, null] : mv))
   }
   const Q = [s]
   while (Q.length > 0) {
     const v = Q.shift()
     if (v === undefined) throw Error("empty queue")
-    setVal(map, v, filler)
+    if (val(map, v) === ".") {
+      console.log("maluje", v)
+      setVal(map, v, filler)
+    }
+    console.log(v, "moves", getNbours(map, v))
     for (let u of getNbours(map, v)) {
+      visited.push(u.toString())
       Q.push(u)
     }
   }
 }
-const displayMap = (map: string[][], ignore = false) => {
-  var disp
-  if (ignore) {
-    disp = map.map((line, i) =>
-      line.map((val, j) => (isBarrier(map, [i, j]) ? "B" : val)).join(),
-    )
-  } else {
-    disp = map.map((line) => {
-      var newL = ""
-      line.forEach((val) => {
-        newL = newL + ", " + (val.length == 1 ? val + " " : val)
-      })
-      return newL
-    })
-  }
-  console.log(disp)
-}
-const hasOddBarriers = (map: string[][], pos: number[]) => {
+
+const hasBarriersNbours = (map: string[][], pos: number[]) => {
   const steps = [
     [-1, 0],
     [1, 0],
     [0, -1],
     [0, 1],
   ]
-  return steps.some((step) => {
-    var barriers = 0
-    var curr = pos
-    const checkSides = (start: number[]) => {
-      if (pos.toString() === "5,8") console.log(pos)
-      if (pos.toString() === "5,8") console.log(start)
-      const coordinate = step[0] === 0 ? 0 : 1
-      if (pos.toString() === "5,8") console.log(coordinate)
-      var up, down
-      if (coordinate == 0) {
-        up = [start[0] + 1, start[1]]
-        down = [start[0] - 1, start[1]]
-      } else {
-        up = [start[0], start[1] + 1]
-        down = [start[0], start[1] - 1]
-      }
-      // const up = [...start]
-      // up[coordinate] = up[coordinate] + 1
-      // const down = [...start]
-      // down[coordinate] = down[coordinate] - 1
-
-      if (pos.toString() === "5,8") console.log(up, down)
-      console.log("---")
-      if (
-        validPos(map, up) &&
-        Math.abs(parseInt(val(map, up)) - parseInt(val(map, prev))) == 1
-      )
-        return true
-      if (
-        validPos(map, down) &&
-        Math.abs(parseInt(val(map, down)) - parseInt(val(map, prev))) == 1
-      )
-        return true
-      return false
-    }
-    while (validPos(map, curr)) {
-      if (isBarrier(map, curr)) {
-        var prev = curr
-        var next = move(prev, step)
-        while (
-          validPos(map, next) &&
-          isBarrier(map, next) &&
-          Math.abs(parseInt(val(map, next)) - parseInt(val(map, prev))) == 1
-        ) {
-          prev = next
-          next = move(prev, step)
-        }
-        if (prev.toString() === curr.toString() || checkSides(prev)) {
-          // console.log("inc", curr)
-          barriers++
-        }
-        curr = prev
-      }
-      curr = move(curr, step)
-    }
-    // if (barriers % 2 == 1) console.log(pos)
-    // else console.log("--")
-    return barriers % 2 == 1
-  })
+  return steps.some((step) => isBarrier(map, move(pos, step)))
 }
 const part2 = (rawInput: string) => {
   var map = parseInput(rawInput)
@@ -293,30 +289,29 @@ const part2 = (rawInput: string) => {
       if (v === "O") fillBad(map, [i, j], badFiller)
     }),
   )
-  displayMap(map, false)
+  map.map((line, i) =>
+    line.map((val, j) => val === badFiller || isValBarrier(val)) ? val : ".",
+  )
+  displayMap(map, true)
+  displayMap(map)
   map.forEach((line, i) =>
     line.forEach((v, j) => {
-      if (
-        v !== badFiller &&
-        v !== goodFiller &&
-        !isBarrier(map, [i, j]) &&
-        hasOddBarriers(map, [i, j])
-      ) {
+      if (v === badFiller && hasBarriersNbours(map, [i, j])) {
         // console.log(i, j)
-        fillGood(map, [i, j], goodFiller)
+        fillBadIn(map, [i, j], badFiller, badFiller)
       }
     }),
   )
   displayMap(map, true)
 
-  // displayMap(map)
-  // var res = 0
-  // map.forEach((line) =>
-  //   line.forEach((v) => {
-  //     if (v === goodFiller) res++
-  //   }),
-  // )
-  // return res
+  displayMap(map)
+  var res = 0
+  map.forEach((line) =>
+    line.forEach((v) => {
+      if (v === ".") res++
+    }),
+  )
+  return res
 }
 
 run({
@@ -343,16 +338,16 @@ LJ...`,
   },
   part2: {
     tests: [
-      //       {
+      // {
       //         input: `...........
-      //       .S-------7.
-      //       .|F-----7|.
-      //       .||.....||.
-      //       .||.....||.
-      //       .|L-7.F-J|.
-      //       .|..|.|..|.
-      //       .L--J.L--J.
-      //       ...........`,
+      // .S-------7.
+      // .|F-----7|.
+      // .||.....||.
+      // .||.....||.
+      // .|L-7.F-J|.
+      // .|..|.|..|.
+      // .L--J.L--J.
+      // ...........`,
       //         expected: 4,
       //       },
       //       {
