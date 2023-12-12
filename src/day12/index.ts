@@ -1,6 +1,6 @@
 import run from "aocrunner"
 interface Line {
-  springs: string[]
+  springs: string
   counts: number[]
 }
 const parseInput = (rawInput: string) =>
@@ -8,9 +8,9 @@ const parseInput = (rawInput: string) =>
     .split("\n")
     .map((line) => line.split(" "))
     .map((line) => {
-      const springs = line[0].split("")
+      // const springs = line[0].split("")
       const counts = line[1].split(",").map((v) => parseInt(v))
-      return <Line>{ springs: springs, counts: counts }
+      return <Line>{ springs: line[0], counts: counts }
     })
 
 const replaceAt = (
@@ -52,7 +52,6 @@ const comb = ({ springs, counts }: Line) => {
     springsIt: number,
     countsIt: number,
   ): number => {
-    // console.log(springs, springsIt, countsIt)
     if (countsIt == counts.length) {
       if (springs.substring(springsIt + 1).includes("#")) return 0
       springs = replaceAt(springs, springsIt, ".", springs.length - springsIt)
@@ -60,67 +59,115 @@ const comb = ({ springs, counts }: Line) => {
     }
     while (springsIt < springs.length && springs[springsIt] === ".") springsIt++
     if (springsIt == springs.length) {
-      // if (!used.has(springs) && checkIfCorrect(springs, counts)) {
       if (checkIfCorrect(springs, counts)) {
-        // used.add(springs)
         return 1
       } else return 0
     }
     var ifPlaced = 0
     var ifNotPlaced = 0
 
-    if (canPlace(springs, springsIt, counts[countsIt])) {
-      // console.log("licze gdy mozna bylo postawic")
+    if (canPlace(springs, springsIt, counts[countsIt]))
       ifPlaced = combRec(
         replaceAt(springs, springsIt, "#", counts[countsIt]),
         springsIt + counts[countsIt],
         countsIt + 1,
       )
-    }
-    // console.log("licze gdy NIE")
-    if (springs[springsIt] === "?") {
+
+    if (springs[springsIt] === "?")
       ifNotPlaced = combRec(
         replaceAt(springs, springsIt, ".", 1),
         springsIt + 1,
         countsIt,
       )
-    }
+
     return ifPlaced + ifNotPlaced
   }
-  // const used: Set<string> = new Set()
-  var res = combRec(springs.join(""), 0, 0)
-  // console.log("dla", counts, "mamy: ", used)
-  const check = (original: string[], my: string) => {
-    if (original.length != my.length) return false
-    for (let i = 0; i < original.length; i++) {
-      if (original[i] === "." && my[i] !== ".") {
-        console.log("bad at", i)
-        return false
-      }
-      if (original[i] === "#" && my[i] !== "#") {
-        console.log("bad at", i)
-        return false
-      }
-    }
-    return true
-  }
-  // for (let my of used) if (!check(springs, my)) throw Error(springs + " " + my)
-  return res
+  return combRec(springs, 0, 0)
 }
 const part1 = (rawInput: string) => {
-  // console.log(checkIfCorrect("#...###", [1, 1, 3]))
   const input = parseInput(rawInput)
-  // return comb(input[5])
   return input.reduce((acc, line) => {
-    // console.log(line, "kombinacje ", comb(line))
-    return acc + comb(line)
+    return acc + solve(line)
   }, 0)
+}
+const multiplyLine = ({ springs, counts }: Line) => {
+  var springsArr = []
+  var countsArr = []
+  for (let i = 0; i < 5; i++) {
+    springsArr.push(springs)
+    countsArr.push(...counts)
+  }
+  return { springs: springsArr.join("?"), counts: countsArr }
+}
+const canPlaceV2 = (springs: string, start: number, howManyToFill: number) => {
+  var i = start
+  while (i > start - howManyToFill) {
+    if (i < 0) return false
+    if (springs[i] === ".") return false
+    i--
+  }
+  if (i > 0 && springs[i] === "#") return false
+  return true
+}
+const solve = ({ springs, counts }: Line) => {
+  springs = "." + springs
+  counts = [0, ...counts]
+  const m = springs.length
+  const n = counts.length
+
+  const dp = new Array(n)
+    .fill(-Infinity)
+    .map(() => new Array(m).fill(-Infinity))
+  for (let i = 0; i < m; i++) {
+    if (springs[i] === "#") break
+    dp[0][i] = 1
+  }
+  var sumOfReq = 0
+  // console.log(dp[0])
+
+  for (let i = 1; i < n; i++) {
+    sumOfReq += counts[i]
+    console.log(sumOfReq)
+    for (let j = sumOfReq; j < m; j++) {
+      var ifPlaced
+      if (canPlaceV2(springs, j, counts[i])) {
+        if (springs[j - counts[i]] === ".") ifPlaced = dp[i - 1][j - counts[i]]
+        else ifPlaced = dp[i - 1][j - counts[i] - 1]
+      } else ifPlaced = -Infinity
+      // if (j - counts[i] - 1 < 0 || springs[j - counts[i]] === "#") ifPlaced = -Infinity
+      // else if (canPlace() springs[j - counts[i]] === ".")
+      //   ifPlaced = dp[i - 1][j - counts[i]]
+      // else {
+      //   if (j - counts[i] - 1 >= 0) ifPlaced = dp[i - 1][j - counts[i] - 1]
+      //   else ifPlaced = -Infinity
+      // }
+      var ifNotPlaced = j >= 0 ? dp[i][j - 1] : -Infinity
+      if (springs[j] === "#") dp[i][j] = ifPlaced
+      else if (springs[j] === ".") dp[i][j] = ifNotPlaced
+      else {
+        if (ifNotPlaced === -Infinity) ifNotPlaced = 0
+        if (ifPlaced === -Infinity) ifPlaced = 0
+        dp[i][j] = ifPlaced + ifNotPlaced
+      }
+      // console.log(i, j, ifPlaced, ifNotPlaced)
+    }
+    sumOfReq++
+    // console.log(dp[i])
+  }
+  return dp[n - 1][m - 1]
 }
 
 const part2 = (rawInput: string) => {
-  const input = parseInput(rawInput)
-
-  return
+  const input = parseInput(rawInput).map((line) => multiplyLine(line))
+  // console.log(input[5].springs, input[5].counts)
+  // solve(input[4])
+  return input.reduce((acc, line, i) => {
+    // console.log("rozpoczynam", i)
+    // console.log(line.springs, line.counts)
+    // let r = solve(line)
+    // console.log("zakonczylem", i, r)
+    return acc + solve(line)
+  }, 0)
 }
 
 run({
@@ -140,10 +187,15 @@ run({
   },
   part2: {
     tests: [
-      // {
-      //   input: ``,
-      //   expected: "",
-      // },
+      {
+        input: `???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1`,
+        expected: 525152,
+      },
     ],
     solution: part2,
   },
