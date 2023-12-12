@@ -26,7 +26,7 @@ export const connections: {
     [-1, 0],
     [0, -1],
   ],
-  "7": [
+  T: [
     [1, 0],
     [0, -1],
   ],
@@ -82,3 +82,9 @@ export const isValBarrier = (x: string) => !isNaN(parseInt(x))
 export const val = (map: any[][], pos: number[]) => map[pos[0]][pos[1]]
 export const setVal = (map: any[][], pos: number[], x: any) =>
   (map[pos[0]][pos[1]] = x)
+
+export function replaceRestWithDot(map: string[][], badFiller: string) {
+  map = map.map((line) =>
+    line.map((v) => (v === badFiller || isValBarrier(v) ? v : ".")),
+  )
+}

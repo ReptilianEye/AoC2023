@@ -6,7 +6,6 @@ import {
   isValBarrier,
   makeArray,
   moves,
-  replaceRestWithDot,
   setVal,
   val,
   validPos,
@@ -162,9 +161,27 @@ const fillBad = (map: string[][], filler = "O") => {
   )
 }
 const connectedByPipe = (map: string[][], pos1: number[], pos2: number[]) => {
+  // console.log(
+  //   "dla ",
+  //   pos1,
+  //   pos2,
+  //   Math.abs(parseInt(val(map, pos1)) - parseInt(val(map, pos2))),
+  // )
   return Math.abs(parseInt(val(map, pos1)) - parseInt(val(map, pos2))) == 1
 }
+const opposite = (pos: number[]) => {
+  return [-pos[0], -pos[1]].map((val) => (val == 0 ? 0 : val))
+}
 
+const hasBarriersNbours = (map: string[][], pos: number[]) => {
+  const steps = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]
+  return steps.some((step) => isBarrier(map, move(pos, step)))
+}
 const det = (a: number[], b: number[], c: number[]) => {
   const [ax, ay] = a
   const [bx, by] = b
@@ -181,6 +198,12 @@ const goByBarrier = (
   const getInner = (prev: number[], curr: number[]) => {
     const next = (curr: number[], prev: number[]) => {
       var u: number[] = []
+      // console.log(
+      //   prev,
+      //   curr,
+      //   getConnections(originalMap, curr),
+      //   val(originalMap, curr),
+      // )
       for (let mv of getConnections(originalMap, curr)) {
         u = move(curr, mv)
         if (u.toString() != prev.toString()) return u
@@ -218,14 +241,18 @@ const goByBarrier = (
       }
     }
     const right = (a: number[], b: number[], c: number[]) => {
+      // console.log(a, b, c)
       var nbours = getNbours(a, b, c)
+      // console.log(nbours)
       for (let nb of nbours) {
         if (det(a, b, nb) < 0) return nb
       }
       throw Error("unassigned")
     }
     const left = (a: number[], b: number[], c: number[]) => {
+      // console.log(a, b, c)
       var nbours = getNbours(a, b, c)
+      // console.log(nbours)
       for (let nb of nbours) {
         if (det(a, b, nb) > 0) return nb
       }
@@ -256,6 +283,7 @@ const goByBarrier = (
     }
   }
 
+  // const goByBarrierDFS = (v: number[], prev: number[], prevInner: number[]) => {
   const goByBarrierDFS = () => {
     while (S.length > 0) {
       const top = S.pop()
@@ -265,13 +293,18 @@ const goByBarrier = (
       const stepIn = inner
       // console.log(v)
       // console.log("prev", prev, "z", v, "do srodka", stepIn)
+      // console.log("rozpoczynam fill")
       if (validPos(toFill, stepIn) && val(toFill, stepIn) === ".") {
         fill(toFill, stepIn)
       }
+      // console.log("skonczony fill")
+
       vis.push(v.toString())
+      // console.log("connections", v, getConnections(originalMap, v))
       for (let mv of getConnections(originalMap, v)) {
         const u = move(v, mv)
         if (!vis.includes(u.toString())) {
+          // goByBarrierDFS(u, v, inner)
           S.push({ v: u, prev: v })
         }
       }
@@ -284,6 +317,10 @@ const goByBarrier = (
   }
   const S: { v: number[]; prev: number[] }[] = []
   const vis: string[] = [prev.toString()]
+  // var prevInner = [1,0];
+  // switch (getConnections(originalMap, prev).map(v => v.toString()).filter(v => v !== [-1, 0].toString())[0]) {
+  //   case [0,-1].toString(): prevInner = []
+  // }
   S.push({ v: start, prev: prev })
   goByBarrierDFS()
 }
@@ -327,25 +364,34 @@ const part2 = (rawInput: string) => {
   const endloopPos = getPos(movesOrder, max(movesOrder))
 
   BFS2(map, endloopPos)
+  console.log("bfs done")
   // displayMap(originalMap)
   replaceS(originalMap, map)
   // displayMap(originalMap)
   // displayMap(map, false)
   fillBad(map, badFiller)
   // displayMap(map, false)
-  replaceRestWithDot(map, badFiller)
+  map = map.map((line) =>
+    line.map((v) => (v === badFiller || isValBarrier(v) ? v : ".")),
+  )
+  console.log("fill bad done")
+
+  const n = map.length
+  const m = map[0].length
 
   var found = false
-  for (let i = 1; i < map.length; i++) {
+  for (let i = 1; i < n; i++) {
     if (!found)
-      for (let j = 1; j < map[0].length; j++) {
+      for (let j = 1; j < m; j++) {
         if (isBarrier(map, [i, j])) {
+          console.log("staring go by barrier")
           goByBarrier(originalMap, map, [i, j], goodFiller)
           found = true
           break
         }
       }
   }
+  console.log("done by barrier")
 
   // displayMap(map, true)
   // displayMap(map)

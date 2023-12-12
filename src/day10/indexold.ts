@@ -6,7 +6,6 @@ import {
   isValBarrier,
   makeArray,
   moves,
-  replaceRestWithDot,
   setVal,
   val,
   validPos,
@@ -117,6 +116,26 @@ const BFS2 = (map: string[][], s: number[]) => {
   }
   setVal(map, s, start)
 }
+const BFS2Old = (map: string[][], s: number[]) => {
+  const starting = connections[val(map, s) as string]
+  var Q: { v: number[]; dir: string }[] = [
+    { v: move(s, starting[0]), dir: keys.universal },
+    { v: move(s, starting[1]), dir: keys.universal },
+  ]
+  while (Q.length > 0) {
+    const next = Q.shift()
+    if (next === undefined) throw Error("empty queue")
+    const { v, dir } = next
+    for (let mv of connections[val(map, v) as string]) {
+      const u = move(v, mv)
+      if (s.toString() !== u.toString() && areConnected(map, v, u)) {
+        Q.push({ v: u, dir: dir })
+      }
+    }
+    setVal(map, v, dir)
+  }
+  setVal(map, s, keys.left)
+}
 const addGuard = (map: string[][]) => {
   const withGuards = map.map((line) => ["O", ...line, "O"])
   const m = withGuards[0].length
@@ -162,9 +181,117 @@ const fillBad = (map: string[][], filler = "O") => {
   )
 }
 const connectedByPipe = (map: string[][], pos1: number[], pos2: number[]) => {
+  // console.log(
+  //   "dla ",
+  //   pos1,
+  //   pos2,
+  //   Math.abs(parseInt(val(map, pos1)) - parseInt(val(map, pos2))),
+  // )
   return Math.abs(parseInt(val(map, pos1)) - parseInt(val(map, pos2))) == 1
 }
+const opposite = (pos: number[]) => {
+  return [-pos[0], -pos[1]].map((val) => (val == 0 ? 0 : val))
+}
+const fillBadIn = (
+  map: string[][],
+  s: number[],
+  badFiller: string,
+  filler = "G",
+) => {
+  const visited: string[] = []
+  const gavePass: { [key: string]: number[] } = {}
+  const getNbours = (map: string[][], pos: number[]) => {
+    const movesBarrier: number[][] = []
+    if (isBarrier(map, pos)) {
+      const pass = gavePass[pos.toString()]
+      // console.log("pass", pass, opposite(pass))
+      moves.forEach((mv) => {
+        const u = move(pos, mv)
+        if (
+          mv.toString() !== opposite(pass).toString() &&
+          validPos(map, u) &&
+          val(map, u) === "."
+        )
+          movesBarrier.push(u)
+      })
+    }
+    return [
+      ...movesBarrier,
+      ...moves
+        .map((mv) => {
+          const u = move(pos, mv)
+          if (!validPos(map, u)) return []
+          if (val(map, u) === filler) return []
+          if (val(map, u) === badFiller) return []
 
+          if (isBarrier(map, u)) {
+            if (isBarrier(map, pos)) {
+              if (!connectedByPipe(map, pos, u)) {
+                return []
+              }
+              gavePass[u.toString()] = move(gavePass[pos.toString()], mv)
+              return u
+            }
+            var nbours = []
+            if (mv[0] != 0) {
+              nbours = [move(u, [0, 1]), move(u, [0, -1])]
+            } else {
+              nbours = [move(u, [1, 0]), move(u, [-1, 0])]
+            }
+            if (pos.toString() === "7,5") console.log("nbours", nbours)
+            var pass = null
+            if (
+              nbours.some((nb) => {
+                if (
+                  validPos(map, nb) &&
+                  (val(map, nb) === "." || isBarrier(map, nb)) &&
+                  !connectedByPipe(map, u, nb)
+                ) {
+                  pass = substract(nb, u)
+                  return true
+                }
+                return false
+              })
+            ) {
+              if (pass) gavePass[u.toString()] = pass
+              return u
+            } else return []
+          }
+          if (!connectedByPipe(map, u, pos)) return []
+
+          if (pos.toString() === "7,5") console.log("rest", u)
+          return u
+        })
+        .filter((x) => x.length > 0)
+        .filter((mv) => !visited.includes(mv.toString())),
+    ]
+    // .map((mv) => (typeof mv[0] === "number" ? [...mv, null] : mv))
+  }
+  const Q = [s]
+  while (Q.length > 0) {
+    const v = Q.shift()
+    if (v === undefined) throw Error("empty queue")
+    if (val(map, v) === ".") {
+      console.log("maluje", v)
+      setVal(map, v, filler)
+    }
+    console.log(v, "moves", getNbours(map, v))
+    for (let u of getNbours(map, v)) {
+      visited.push(u.toString())
+      Q.push(u)
+    }
+  }
+}
+
+const hasBarriersNbours = (map: string[][], pos: number[]) => {
+  const steps = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+  ]
+  return steps.some((step) => isBarrier(map, move(pos, step)))
+}
 const det = (a: number[], b: number[], c: number[]) => {
   const [ax, ay] = a
   const [bx, by] = b
@@ -178,142 +305,94 @@ const goByBarrier = (
   start: number[],
   filler: string,
 ) => {
-  const getInner = (prev: number[], curr: number[]) => {
-    const next = (curr: number[], prev: number[]) => {
-      var u: number[] = []
-      for (let mv of getConnections(originalMap, curr)) {
-        u = move(curr, mv)
-        if (u.toString() != prev.toString()) return u
-      }
-      throw Error("u unassigned")
+  const getInner = (
+    originalMap: string[][],
+    prev: number[],
+    curr: number[],
+    prevInner: number[],
+  ) => {
+    const order = [
+      [-1, 0],
+      [0, 1],
+      [1, 0],
+      [0, -1],
+    ]
+    const next = (prev: number[]) => {
+      // console.log(order.findIndex((v) => v.toString() === prev.toString()) + 1)
+      return order[
+        (order.findIndex((v) => v.toString() === prev.toString()) + 1) %
+          order.length
+      ]
     }
-    const getNbours = (a: number[], b: number[], c: number[]) => {
-      var nbours
-      if (det(a, b, c) == 0) {
-        if (a[0] === b[0]) {
-          nbours = [
-            [b[0] + 1, b[1]],
-            [b[0] - 1, b[1]],
-          ]
-        } else {
-          nbours = [
-            [b[0], b[1] + 1],
-            [b[0], b[1] - 1],
-          ]
-        }
-        return nbours
-      } else {
-        let cand = [
-          [a[0], c[1]],
-          [c[0], a[1]],
-        ]
-        var good
-        for (let c of cand) {
-          if (c.toString() !== b.toString()) good = c
-        }
-        if (good === undefined) throw Error("good unassigned")
-        const vector = [b[0] - good[0], b[1] - good[1]]
-        const second = [b[0] + vector[0], b[1] + vector[1]]
-        return [good, second]
-      }
+    const previous = (prev: number[]) => {
+      let i = order.findIndex((v) => v.toString() === prev.toString())
+      return order[i - 1 < 0 ? order.length - 1 : i - 1]
     }
-    const right = (a: number[], b: number[], c: number[]) => {
-      var nbours = getNbours(a, b, c)
-      for (let nb of nbours) {
-        if (det(a, b, nb) < 0) return nb
-      }
-      throw Error("unassigned")
+    const isTurn = (pos: number[]) =>
+      ["J", "L", "F", "T"].includes(val(originalMap, pos))
+
+    it++
+    if (it == 2 || !isTurn(prev)) {
+      return prevInner
     }
-    const left = (a: number[], b: number[], c: number[]) => {
-      var nbours = getNbours(a, b, c)
-      for (let nb of nbours) {
-        if (det(a, b, nb) > 0) return nb
-      }
-      throw Error("unassigned")
+
+    var u: number[] = []
+    for (let mv of getConnections(originalMap, prev)) {
+      u = move(prev, mv)
+      if (u.toString() != curr.toString()) break
     }
-    const nextStep = next(curr, prev)
-    // return left(prev, curr, nextStep)
-    return right(prev, curr, nextStep)
+    if (u.length == 0) throw Error("u unassigned")
+    // console.log(det(u, prev, curr))
+    if (det(u, prev, curr) > 0) {
+      return previous(prevInner)
+    }
+    return next(prevInner)
   }
   const fill = (map: string[][], start: number[]) => {
     const Q = [start]
-    const vis = [start.toString()]
     while (Q.length > 0) {
       const v = Q.shift()
       if (v === undefined) throw Error("empty queue")
       setVal(map, v, filler)
       for (let mv of moves) {
         const u = move(v, mv)
-        if (
-          validPos(map, u) &&
-          val(map, u) === "." &&
-          !vis.includes(u.toString())
-        ) {
-          vis.push(u.toString())
-          Q.push(u)
-        }
+        if (validPos(map, u) && val(map, u) === ".") Q.push(u)
       }
     }
   }
-
+  const S: { v: number[]; prev: number[]; prevInner: number[] }[] = []
+  const vis: string[] = []
+  // const goByBarrierDFS = (v: number[], prev: number[], prevInner: number[]) => {
   const goByBarrierDFS = () => {
     while (S.length > 0) {
       const top = S.pop()
       if (top === undefined) throw Error("empty stack")
-      const { v, prev } = top
-      var inner = getInner(prev, v)
-      const stepIn = inner
-      // console.log(v)
-      // console.log("prev", prev, "z", v, "do srodka", stepIn)
+      const { v, prev, prevInner } = top
+      var inner = getInner(originalMap, prev, v, prevInner)
+      const stepIn = move(v, inner)
+      console.log("prev", prev, "z", v, "do srodka", stepIn)
       if (validPos(toFill, stepIn) && val(toFill, stepIn) === ".") {
         fill(toFill, stepIn)
       }
       vis.push(v.toString())
       for (let mv of getConnections(originalMap, v)) {
         const u = move(v, mv)
-        if (!vis.includes(u.toString())) {
-          S.push({ v: u, prev: v })
+        if (validPos(originalMap, u) && !vis.includes(u.toString())) {
+          // goByBarrierDFS(u, v, inner)
+          S.push({ v: u, prev: v, prevInner: inner })
         }
       }
     }
   }
+  var it = 0
+  // var inner
   var prev = move(start, [1, 0])
-  let inner = [prev[0], prev[1] + 1]
-  if (validPos(toFill, inner) && val(toFill, inner) === ".") {
-    fill(toFill, inner)
-  }
-  const S: { v: number[]; prev: number[] }[] = []
-  const vis: string[] = [prev.toString()]
-  S.push({ v: start, prev: prev })
+  // var prevInner = [1,0];
+  // switch (getConnections(originalMap, prev).map(v => v.toString()).filter(v => v !== [-1, 0].toString())[0]) {
+  //   case [0,-1].toString(): prevInner = []
+  // }
+  S.push({ v: start, prev: prev, prevInner: [1, 0] })
   goByBarrierDFS()
-}
-const replaceS = (orginalMap: string[][], map: string[][]) => {
-  const sides = [
-    [0, 1],
-    [0, -1],
-    [1, 0],
-    [-1, 0],
-  ]
-  for (let i = 0; i < orginalMap.length; i++) {
-    const nbours = [] as number[][]
-    for (let j = 0; j < orginalMap[0].length; j++) {
-      if (orginalMap[i][j] === "S") {
-        for (let side of sides) {
-          const u = move([i, j], side)
-          if (validPos(orginalMap, u) && connectedByPipe(map, [i, j], u)) {
-            nbours.push(side)
-          }
-        }
-        for (let k of Object.keys(connections)) {
-          if (k === "S") continue
-          if (connections[k].sort().toString() === nbours.sort().toString()) {
-            setVal(orginalMap, [i, j], k)
-            return
-          }
-        }
-      }
-    }
-  }
 }
 const part2 = (rawInput: string) => {
   var map = parseInput(rawInput)
@@ -327,18 +406,19 @@ const part2 = (rawInput: string) => {
   const endloopPos = getPos(movesOrder, max(movesOrder))
 
   BFS2(map, endloopPos)
-  // displayMap(originalMap)
-  replaceS(originalMap, map)
-  // displayMap(originalMap)
   // displayMap(map, false)
   fillBad(map, badFiller)
-  // displayMap(map, false)
-  replaceRestWithDot(map, badFiller)
+  displayMap(map, false)
+  map = map.map((line) =>
+    line.map((v) => (v === badFiller || isValBarrier(v) ? v : ".")),
+  )
+  const n = map.length
+  const m = map[0].length
 
   var found = false
-  for (let i = 1; i < map.length; i++) {
+  for (let i = 1; i < n; i++) {
     if (!found)
-      for (let j = 1; j < map[0].length; j++) {
+      for (let j = 1; j < m; j++) {
         if (isBarrier(map, [i, j])) {
           goByBarrier(originalMap, map, [i, j], goodFiller)
           found = true
@@ -346,8 +426,7 @@ const part2 = (rawInput: string) => {
         }
       }
   }
-
-  // displayMap(map, true)
+  displayMap(map, true)
   // displayMap(map)
   // map.forEach((line, i) =>
   //   line.forEach((v, j) => {
@@ -441,7 +520,7 @@ L---JF-JLJ.||-FJLJJ7
 7-L-JL7||F7|L7F-7F7|
 L.L7LFJ|||||FJL7||LJ
 L7JLJL-JLJLJL--JLJ.L`,
-        expected: 10,
+        expected: 8,
       },
     ],
     solution: part2,
