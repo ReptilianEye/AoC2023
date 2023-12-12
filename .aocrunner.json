@@ -150,16 +150,16 @@
         "attempts": [
           "6797"
         ],
-        "time": 45.3121
+        "time": 37.346
       },
       "part2": {
-        "solved": false,
-        "result": "20",
+        "solved": true,
+        "result": "459",
         "attempts": [
           "544",
           "267"
         ],
-        "time": 1204.4649
+        "time": 794.1404
       }
     },
     {
@@ -180,12 +180,12 @@
     },
     {
       "part1": {
-        "solved": false,
-        "result": "7506",
+        "solved": true,
+        "result": "7118",
         "attempts": [
           "7506"
         ],
-        "time": 1401.0767
+        "time": 43.394
       },
       "part2": {
         "solved": false,

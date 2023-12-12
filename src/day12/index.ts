@@ -54,14 +54,15 @@ const comb = ({ springs, counts }: Line) => {
   ): number => {
     // console.log(springs, springsIt, countsIt)
     if (countsIt == counts.length) {
+      if (springs.substring(springsIt + 1).includes("#")) return 0
       springs = replaceAt(springs, springsIt, ".", springs.length - springsIt)
       springsIt = springs.length
     }
     while (springsIt < springs.length && springs[springsIt] === ".") springsIt++
     if (springsIt == springs.length) {
-      if (!used.has(springs) && checkIfCorrect(springs, counts)) {
-        // console.log("dobre bylo,", springs)
-        used.add(springs)
+      // if (!used.has(springs) && checkIfCorrect(springs, counts)) {
+      if (checkIfCorrect(springs, counts)) {
+        // used.add(springs)
         return 1
       } else return 0
     }
@@ -86,10 +87,25 @@ const comb = ({ springs, counts }: Line) => {
     }
     return ifPlaced + ifNotPlaced
   }
-  const used: Set<string> = new Set()
+  // const used: Set<string> = new Set()
   var res = combRec(springs.join(""), 0, 0)
-  console.log("dla", counts, "mamy: ", used)
-  return used.size
+  // console.log("dla", counts, "mamy: ", used)
+  const check = (original: string[], my: string) => {
+    if (original.length != my.length) return false
+    for (let i = 0; i < original.length; i++) {
+      if (original[i] === "." && my[i] !== ".") {
+        console.log("bad at", i)
+        return false
+      }
+      if (original[i] === "#" && my[i] !== "#") {
+        console.log("bad at", i)
+        return false
+      }
+    }
+    return true
+  }
+  // for (let my of used) if (!check(springs, my)) throw Error(springs + " " + my)
+  return res
 }
 const part1 = (rawInput: string) => {
   // console.log(checkIfCorrect("#...###", [1, 1, 3]))
