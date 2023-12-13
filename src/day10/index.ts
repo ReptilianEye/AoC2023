@@ -3,7 +3,7 @@ import {
   BFSFindBarrier,
   BFSMarkBarrier,
   addGuard,
-  countBarriers,
+  cutBarriersOddTimes,
   fillBad,
   getPos,
   max,
@@ -39,7 +39,7 @@ const part2 = (rawInput: string) => {
   originalMap.forEach((line, i) =>
     line.forEach((v, j) => {
       if (v === ".") {
-        if (countBarriers(originalMap, [i, j]).every((v) => v % 2 == 1)) sol++
+        if (cutBarriersOddTimes(originalMap, [i, j])) sol++
       }
     }),
   )

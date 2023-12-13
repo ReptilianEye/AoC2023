@@ -263,7 +263,10 @@ export const fillBad = (map: string[][], filler = "O") => {
     }),
   )
 }
-export const countBarriers = (originalMap: string[][], start: number[]) => {
+export const cutBarriersOddTimes = (
+  originalMap: string[][],
+  start: number[],
+) => {
   const countBarriersSpecific = (direction: number, horizonally: boolean) => {
     const sameSide = (pipe1: string, pipe2: string) => {
       const conn1 = connections[pipe1].filter((v) => v[1 - mainCoordinate] != 0)
@@ -303,8 +306,8 @@ export const countBarriers = (originalMap: string[][], start: number[]) => {
   }
   const dirSpec = [-1, 1]
   const orientSpec = [true, false]
-  const res = []
   for (let dir of dirSpec)
-    for (let orient of orientSpec) res.push(countBarriersSpecific(dir, orient))
-  return res
+    for (let orient of orientSpec)
+      if (countBarriersSpecific(dir, orient) % 2 == 1) return true
+  return false
 }
