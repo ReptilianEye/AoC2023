@@ -1,4 +1,5 @@
 import run from "aocrunner"
+import { move, substract, validPos } from "../help_func.js"
 const makeArrayOfSets = (n: number, m: number) => {
   var arr = [] as Set<String>[][]
   for (let i = 0; i < n; i++) {
@@ -41,18 +42,7 @@ const moves = {
     ],
   ],
 }
-export const move = (start: number[], moveCoord: number[]) => [
-  start[0] + moveCoord[0],
-  start[1] + moveCoord[1],
-]
-const validPos = (map: any[][], pos: number[]) => {
-  const n = map.length
-  const m = map[0].length
-  if (pos[0] < 0 || pos[0] >= n) return false
-  if (pos[1] < 0 || pos[1] >= m) return false
-  return true
-}
-const substract = (a: number[], b: number[]) => [a[0] - b[0], a[1] - b[1]]
+
 const getNbours = (map: MapElement[][], pos: number[], prev: number[]) => {
   let el = map[pos[0]][pos[1]]
   let prevUnitVec = substract(prev, pos)
