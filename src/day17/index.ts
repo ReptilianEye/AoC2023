@@ -50,15 +50,6 @@ const getNborsPart2 = (map: number[][], curr: Path) => {
   const { prev, pos, stepsInSameDirection } = curr
   const stepBack = substract(prev, pos)
   const stepForward = substract(pos, prev)
-  // if (pos.toString() === [11, 12].toString())
-  //   console.log(
-  //     "forward",
-  //     prev,
-  //     pos,
-  //     stepForward,
-  //     "steps:",
-  //     stepsInSameDirection,
-  //   )
   const base = [
     [0, 1],
     [1, 0],
@@ -87,20 +78,8 @@ interface Path {
   path: number[][]
 }
 const compare = (a: Path, b: Path) => a.cost < b.cost
-const mapToString = (pos: number[]) => {
-  switch (pos.toString()) {
-    case "0,1":
-      return ">"
-    case "1,0":
-      return "v"
-    case "0,-1":
-      return "<"
-    case "-1,0":
-      return "^"
-  }
-}
+
 const printPath = (map: number[][], path: number[][]) => {
-  path.unshift([0, 0])
   var mapStr = map.map((line) => line.map((v) => v.toString()))
   path.forEach((pos) => {
     mapStr[pos[0]][pos[1]] = "#"
@@ -117,14 +96,12 @@ const dijkstra = (
   const end = [map.length - 1, map[0].length - 1]
   const vis = makeArrayOfSets(map.length, map[0].length)
   const Q = new PriorityQueue<Path>(compare)
-  var i = 0
-  const sols = []
   Q.add({
     pos: start,
     prev: [Infinity, Infinity],
     stepsInSameDirection: 0,
     cost: 0,
-    path: [],
+    path: [start],
   })
   while (!Q.isEmpty()) {
     let top = Q.poll()
@@ -132,20 +109,10 @@ const dijkstra = (
     const { pos, prev, stepsInSameDirection, cost } = top
 
     if (pos.toString() === end.toString()) {
-      // top.path.forEach((p) => {
-      //   console.log(p)
-      // })
-      // printPath(map, top.path)
       return cost
-      sols.push(top)
-      // return cost
     }
     if (vis[pos[0]][pos[1]].has([...prev, stepsInSameDirection].toString()))
       continue
-    // if (prev.toString() === [10, 12].toString())
-    //   console.log(prev, pos, stepsInSameDirection, cost, getNbors(map, top))
-    i++
-    // if (i == 100) return
     vis[pos[0]][pos[1]].add([...prev, stepsInSameDirection].toString())
     for (let nb of getNbors(map, top)) {
       let newPos = move(pos, nb)
@@ -162,11 +129,6 @@ const dijkstra = (
       })
     }
   }
-  // sols.forEach((s) => {
-  //   console.log(s.cost)
-  //   printPath(map, s.path)
-  // })
-  return Math.min(...sols.map((s) => s.cost))
 }
 
 const part1 = (rawInput: string) => {
