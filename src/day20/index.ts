@@ -82,38 +82,22 @@ const simulateOneClick = (
   ]
   var lowSignals = 0
   var highSignals = 0
-  var printed = false
   while (Q.length > 0) {
     const top = Q.shift()
     if (top === undefined) throw new Error("top is undefined")
     const { id, parent, signal } = top
     if (id === observed) {
-      // break
-      // return conjectionState.get(observed)
-      // if (
-      //   Array.from(conjectionState.get(observed)!.values()).some(
-      //     (v) => v === Signal.high,
-      //   )
-      // ) {
       if (cycleLenght === undefined || nOfClicks === undefined)
         throw new Error("cycleLenght or nOfClicks is undefined")
-      Array.from(conjectionState.get(observed)?.entries()!).forEach(
-        ([id, signal]) => {
-          if (cycleLenght[id].size < 2 && signal === Signal.high) {
-            cycleLenght[id].add(nOfClicks)
-          }
-        },
-      )
-
-      // if (!printed) console.log("--------")
-      // printed = true
-      // console.log(Array.from(conjectionState.get(observed)!.values()))
-      // }
+      Array.from(conjectionState.get(observed)?.entries()!)
+        .filter(
+          ([id, signal]) => cycleLenght[id].size < 2 && signal === Signal.high,
+        )
+        .forEach(([id]) => {
+          cycleLenght[id].add(nOfClicks)
+        })
     }
-    // if (["dd", "fh", "xp", "fc", observed].includes(id)) console.log(id)
-    if (signal === Signal.low)
-      // console.log(parent, "-", signal, "->", id)
-      lowSignals++
+    if (signal === Signal.low) lowSignals++
     else highSignals++
 
     const module = System.get(id)!
@@ -141,9 +125,7 @@ const simulateOneClick = (
       }
     }
   }
-  if (observed === undefined)
-    return { lowSignals, highSignals, prev: undefined }
-  return { lowSignals, highSignals, prev: conjectionState.get(observed) }
+  return { lowSignals, highSignals }
 }
 
 const part1 = (rawInput: string) => {
@@ -176,7 +158,7 @@ const part2 = (rawInput: string) => {
     fc: new Set<number>(),
   }
   while (true) {
-    const { prev } = simulateOneClick(
+    simulateOneClick(
       System,
       flipFlopsState,
       conjectionState,
@@ -184,35 +166,12 @@ const part2 = (rawInput: string) => {
       cycleLenght,
       clicks,
     )
-    // return
-    // console.log(prev)
-    // console.log(flipFlopsState)
-    // if (prev === undefined) throw new Error("prev is undefined")
-    // for (let observed of observeCycleOf) {
-    //   if (
-    //     cycleLenght[observed as keyof typeof cycleLenght] == -1 &&
-    //     prev!.get(observed) === Signal.high
-    //   ) {
-    //     cycleLenght[observed as keyof typeof cycleLenght] = sol
-    //     // console.log(observed, Array.from(conjection.values()))
-    //     // if (
-    //     //   cycleLenght[observed as keyof typeof cycleLenght] == -1 &&
-    //     //   Array.from(conjection.values()).every((v) => v === Signal.high)
-    //     // ) {
-    //   }
-    // }
-    // console.log(Object.values(cycleLenght))
     if (Object.values(cycleLenght).every((v) => v.size === 2)) {
       return Object.values(cycleLenght)
         .map((it) => Array.from(it))
         .map((v) => Math.abs(v[0] - v[1]))
         .reduce(lcmFunction)
     }
-    // // if (typeof result === "boolean") {
-    // //   console.log(result)
-    // //   if (result) return sol
-    // }
-    // console.log(sol)
     clicks++
   }
 }
