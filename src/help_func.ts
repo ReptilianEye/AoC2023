@@ -13,3 +13,5 @@ export const move = (start: number[], moveCoord: number[]) => [
   start[0] + moveCoord[0],
   start[1] + moveCoord[1],
 ]
+export const distanceABS = (a: number[], b: number[]) =>
+  Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1])

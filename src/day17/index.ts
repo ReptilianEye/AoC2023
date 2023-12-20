@@ -1,6 +1,6 @@
 import run from "aocrunner"
 import { move, substract, validPos } from "../help_func.js"
-import PriorityQueue from "./FastPriorityQueue.js"
+import PriorityQueue from "../dataStructures/FastPriorityQueue.js/index.js"
 
 const makeArrayOfSets = (n: number, m: number) => {
   var arr = [] as Set<String>[][]
