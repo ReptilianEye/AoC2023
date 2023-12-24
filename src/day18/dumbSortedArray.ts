@@ -1,3 +1,5 @@
+import { Point } from "./Point"
+
 export class BarrierPoint {
   coord: number[]
   innerSide: "left" | "right"
@@ -36,7 +38,11 @@ export class SortedArray {
   }
   replace(point: BarrierPoint, coord: number[]) {
     // console.log("old", point.coord, "new", coord)
-    point.coord = coord
+    // this.arr[this.find(point.coord[1])] = new BarrierPoint(
+    //   [...coord],
+    //   point.innerSide,
+    // )
+    point.coord = [...coord]
     // this.arr.sort(comparePoints)
   }
 

@@ -1,6 +1,5 @@
 import run from "aocrunner"
 import { Module } from "module"
-import { Stream } from "stream"
 
 type ModuleType = "broadcaster" | "%" | "&" | "test"
 

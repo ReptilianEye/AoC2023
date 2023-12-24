@@ -15,3 +15,17 @@ export const move = (start: number[], moveCoord: number[]) => [
 ]
 export const distanceABS = (a: number[], b: number[]) =>
   Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1])
+export const moves = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+] as [number, number][]
+
+export const printMap = (map: any[][]) => {
+  map.forEach((line) =>
+    console.log(
+      line.reduce((acc, it) => acc + (it.length == 1 ? "   " : "  ") + it, ""),
+    ),
+  )
+}

@@ -195,36 +195,70 @@ const comparePair = (a: Pair, b: Pair) => {
 }
 const calcSurface = (a: number[], b: number[]) =>
   (Math.abs(a[0] - b[0]) + 1) * (Math.abs(a[1] - b[1]) + 1)
+const overlappingDistance = (a: Pair, otherSide: number[]) =>
+  Math.min(
+    ...a.pair.map((n) => distance(n.coord, [n.coord[0], otherSide[1]])),
+  ) + 1
+
+const calcSurfaceOfReq = (base: Pair, T: SortedArray) => {
+  var surface = 0
+  const connectedToHigher = base.getConnectedToHigher()
+  const otherSide = connectedToHigher.getOtherSide(T)
+  if (otherSide !== undefined) {
+    surface = calcSurface(connectedToHigher.coord, otherSide.coord)
+  }
+  return { surface, connectedToHigher, otherSide }
+}
 const solve = (nodeMap: Map<number[], Point>, pairs: Pair[]) => {
   var Surface = 0
   const Q = new PriorityQueue<Pair>(comparePair)
   pairs.forEach((pair) => Q.add(pair))
   var T = new SortedArray()
+  // var toWatchAt = pairs[0]
+  // pairs.forEach((pair) => {
+  //   if (pair.col1 === 6 && pair.col2 === 4 && pair.row === 7) toWatchAt = pair
+  //   // console.log(pair.col1, pair.col2, pair.row)
+  //   // console.log(pair.pair.map((x) => x.nbours.map((nb) => nb.coord)))
+  // })
 
   while (!Q.isEmpty()) {
     const top = Q.poll()
     if (top == undefined) throw new Error("queue is empty")
-
     const { type } = top
     console.log(top.col1, top.col2, top.row)
     console.log(T.arr.map((x) => [...x.coord, x.innerSide]))
+    // console.log(
+    //   "stan [7,4]",
+    //   toWatchAt.pair.map((x) => x.nbours.map((nb) => nb.coord)),
+    // )
     if (type === PairType.START) {
       T.add(new BarrierPoint([top.row, top.col1], "right"))
       T.add(new BarrierPoint([top.row, top.col2], "left"))
       // T.add([top.x2, top.y])
     } else if (type === PairType.END) {
+      Surface += calcSurfaceOfReq(top, T).surface
+      // const connectedToHigher = top.getConnectedToHigher()
+      // const otherSide = connectedToHigher.getOtherSide(T)!
+      // Surface += calcSurface(connectedToHigher.coord, otherSide.coord)
       T.remove(top.col1)
       T.remove(top.col2)
     } else if (type === PairType.CONNECT) {
-      const connectedToHigher = top.getConnectedToHigher()
+      const { surface, connectedToHigher, otherSide } = calcSurfaceOfReq(top, T)
+      // const connectedToHigher = top.getConnectedToHigher()
       console.log("connectedToHigher: ", connectedToHigher)
-      const otherSide = connectedToHigher.getOtherSide(T)
+      // const otherSide = connectedToHigher.getOtherSide(T)
+      // if (otherSide != undefined) {
+      console.log("other side: ", otherSide)
+      // if (connectedToHigher.coord[0] !== otherSide.coord[0]) {
+      console.log(
+        "calculated surface: ",
+        surface,
+        // calcSurface(connectedToHigher.coord, otherSide.coord),
+      )
       if (otherSide != undefined) {
-        console.log("other side: ", otherSide)
-        Surface +=
-          calcSurface(connectedToHigher.coord, otherSide.coord) -
-          Math.abs(connectedToHigher.coord[1] - otherSide.coord[1]) +
-          1
+        console.log("overlapping: ", overlappingDistance(top, otherSide.coord))
+        Surface += surface - overlappingDistance(top, otherSide.coord)
+        // }
         console.log("surface: ", Surface)
         otherSide.updateRow(top.row)
       } else {
@@ -239,14 +273,14 @@ const solve = (nodeMap: Map<number[], Point>, pairs: Pair[]) => {
 }
 const part2 = (rawInput: string) => {
   const input = parsePart1(parseInput(rawInput))
+  const grid = saveAsGrid(input)
+  grid.forEach((line) => console.log(line.join("")))
   // const input = parsePart2(parseInput(rawInput))
-  const normalized = normalize(input)
-  const { nodeMap, pairs } = connect(normalized)
-  const surface = solve(nodeMap, pairs)
-  return surface
+  // const normalized = normalize(input)
+  // const { nodeMap, pairs } = connect(normalized)
+  // const surface = solve(nodeMap, pairs)
+  // return surface
   // console.log(normalized)
-
-  return
 }
 
 run({
@@ -269,31 +303,69 @@ L 2 (#015232)
 U 2 (#7a21e3)`,
         expected: 62,
       },
+      {
+        input: `R 2 (#70c710)
+D 8 (#0dc571)
+L 3 (#5713f0)
+D 2 (#d2c081)
+L 2 (#59c680)
+U 3 (#411b91)
+L 2 (#8ceee2)
+U 5 (#caa173)
+R 1 (#1b58a2)
+U 1 (#7807d2)
+R 1 (#a77fa3)
+D 3 (#015232)
+R 1 (#7a21e3)
+D 2 (#015232)
+R 2 (#015232)
+U 6 (#015232)`,
+        expected: 58,
+      },
     ],
     solution: part1,
   },
   part2: {
     tests: [
       {
-        input: `R 6 (#70c710)
-D 5 (#0dc571)
-L 2 (#5713f0)
+        input: `R 2 (#70c710)
+D 8 (#0dc571)
+L 3 (#5713f0)
 D 2 (#d2c081)
-R 2 (#59c680)
-D 2 (#411b91)
-L 5 (#8ceee2)
-U 2 (#caa173)
-L 1 (#1b58a2)
-U 2 (#caa171)
-R 2 (#7807d2)
-U 3 (#a77fa3)
-L 2 (#015232)
-U 2 (#7a21e3)`,
-        expected: 952408144115,
+L 2 (#59c680)
+U 3 (#411b91)
+L 2 (#8ceee2)
+U 5 (#caa173)
+R 1 (#1b58a2)
+U 1 (#7807d2)
+R 1 (#a77fa3)
+D 3 (#015232)
+R 1 (#7a21e3)
+D 2 (#015232)
+R 2 (#015232)
+U 6 (#015232)`,
+        expected: 62,
       },
+      //       {
+      //         input: `R 6 (#70c710)
+      // D 5 (#0dc571)
+      // L 2 (#5713f0)
+      // D 2 (#d2c081)
+      // R 2 (#59c680)
+      // D 2 (#411b91)
+      // L 5 (#8ceee2)
+      // U 2 (#caa173)
+      // L 1 (#1b58a2)
+      // U 2 (#caa171)
+      // R 2 (#7807d2)
+      // U 3 (#a77fa3)
+      // L 2 (#015232)
+      // U 2 (#7a21e3)`,
+      //         expected: 952408144115,
+      //       },
     ],
     solution: part2,
   },
   trimTestInputs: true,
-  onlyTests: true,
+  // onlyTests: true,
 })
